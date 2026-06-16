@@ -1,36 +1,17 @@
 package com.example.data
 
 import android.content.Context
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
-import com.squareup.moshi.JsonClass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import android.util.Log
 
-@JsonClass(generateAdapter = true)
-data class ParsedChemical(
-    val name: String,
-    val displayName: String,
-    val plainEnglishName: String,
-    val purpose: String,
-    val riskLevel: String, // "HIGH", "MODERATE", "LOW"
-    val riskDescription: String,
-    val dietarySafety: String,
-    val isPfas: Boolean = false
-)
-
 class ChemicalRepository(
     private val chemicalDao: ChemicalDao,
     private val scanHistoryDao: ScanHistoryDao
 ) {
     private val TAG = "ChemicalRepository"
-    private val moshi = Moshi.Builder().build()
-    private val parsedAdapter = moshi.adapter<List<ParsedChemical>>(
-        Types.newParameterizedType(List::class.java, ParsedChemical::class.java)
-    )
 
     val allChemicals: Flow<List<ChemicalEntity>> = chemicalDao.getAllChemicals()
     val scanHistory: Flow<List<ScanHistoryEntity>> = scanHistoryDao.getAllHistory()
@@ -198,9 +179,8 @@ class ChemicalRepository(
     }
 
     /**
-     * Translates and breaks down a raw list of ingredients.
-     * If Gemini API is available and active, it calls the AI model.
-     * Otherwise, it splits words locally and performs dynamic keyword searches in our database.
+     * Translates and breaks down a raw list of ingredients locally.
+     * Splits words locally and performs dynamic keyword searches in our database.
      */
     suspend fun analyzeIngredients(
         productName: String,
@@ -208,50 +188,8 @@ class ChemicalRepository(
     ): Pair<List<ChemicalEntity>, String> = withContext(Dispatchers.IO) {
         val normalizedInput = ingredientsText.lowercase()
 
-        // 1. Try Gemini first
-        if (GeminiHelper.isApiKeyAvailable()) {
-            Log.d(TAG, "Gemini API key is available. Calling Gemini REST...")
-            val resultJson = GeminiHelper.parseIngredientsList(ingredientsText)
-            if (resultJson != null) {
-                try {
-                val parsed = parsedAdapter.fromJson(resultJson)
-                if (!parsed.isNullOrEmpty()) {
-                    val entities = parsed.map {
-                        ChemicalEntity(
-                            name = it.name.lowercase().trim(),
-                            displayName = it.displayName,
-                            plainEnglishName = it.plainEnglishName,
-                            purpose = it.purpose,
-                            riskLevel = it.riskLevel.uppercase(),
-                            riskDescription = it.riskDescription,
-                            dietarySafety = it.dietarySafety,
-                            isPfas = it.isPfas
-                        )
-                    }
-                    // Cache the results in the database so they are searched immediately next time!
-                    chemicalDao.insertChemicals(entities)
-
-                    // Calculate score based on findings:
-                    // 100 points baseline. -20 for each HIGH risk, -10 for each MODERATE risk, -2 for each LOW risk. Min 10 points.
-                    val score = calculateScore(entities)
-
-                    val newScan = ScanHistoryEntity(
-                        productName = productName.ifEmpty { "Scanned Product" },
-                        rawIngredients = ingredientsText,
-                        score = score
-                    )
-                    scanHistoryDao.insertHistory(newScan)
-
-                    return@withContext Pair(entities, "api")
-                }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to parse Moshi JSON from Gemini output: $resultJson", e)
-                }
-            }
-        }
-
-        // 2. Fallback: Smart Local Keyword Matcher (Offline Mode)
-        Log.d(TAG, "Falling back to local keyword matcher")
+        // Local Keyword Matcher (Offline Mode)
+        Log.d(TAG, "Using local keyword matcher")
         val scanResults = mutableListOf<ChemicalEntity>()
         val allLocal = chemicalDao.getAllChemicals().firstOrNull() ?: emptyList()
 

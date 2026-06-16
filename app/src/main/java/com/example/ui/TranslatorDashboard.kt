@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,15 +71,6 @@ fun TranslatorDashboardScreen(
                             fontSize = 20.sp,
                             fontFamily = FontFamily.SansSerif
                         )
-                        if (userSettings.isPremium) {
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Badge(
-                                containerColor = Color(0xFFFBBF24),
-                                contentColor = Color(0xFF451A03)
-                            ) {
-                                Text("PRO", fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                            }
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -94,7 +86,7 @@ fun TranslatorDashboardScreen(
             ) {
                 listOf(
                     Triple("translator", Icons.Default.Search, "Scan & Translate"),
-                    Triple("directory", Icons.Default.List, "Dictionary"),
+                    Triple("directory", Icons.AutoMirrored.Filled.List, "Dictionary"),
                     Triple("history", Icons.Default.Refresh, "Scan History"),
                     Triple("profile", Icons.Default.Settings, "Diet Profile")
                 ).forEach { (tabId, icon, label) ->
@@ -136,29 +128,16 @@ fun TranslatorDashboardScreen(
             when (currentTab) {
                 "translator" -> ScanAndTranslateTab(
                     viewModel = viewModel,
-                    userSettings = userSettings,
-                    onRequestPremium = { showSubscriptionDialog = true }
+                    userSettings = userSettings
                 )
                 "directory" -> ChemicalDirectoryTab(
                     viewModel = viewModel,
-                    userSettings = userSettings,
-                    onRequestPremium = { showSubscriptionDialog = true }
+                    userSettings = userSettings
                 )
                 "history" -> HistoryTab(viewModel = viewModel)
                 "profile" -> ProfileTab(
                     viewModel = viewModel,
-                    userSettings = userSettings,
-                    onRequestPremium = { showSubscriptionDialog = true }
-                )
-            }
-
-            if (showSubscriptionDialog) {
-                PremiumSubscriptionDialog(
-                    onDismiss = { showSubscriptionDialog = false },
-                    onSubscribeSuccess = {
-                        viewModel.updateSettings(userSettings.copy(isPremium = true))
-                        showSubscriptionDialog = false
-                    }
+                    userSettings = userSettings
                 )
             }
         }
@@ -168,8 +147,7 @@ fun TranslatorDashboardScreen(
 @Composable
 fun ScanAndTranslateTab(
     viewModel: TranslatorViewModel,
-    userSettings: UserSettings,
-    onRequestPremium: () -> Unit
+    userSettings: UserSettings
 ) {
     var productName by remember { mutableStateOf("") }
     var rawIngredientsText by remember { mutableStateOf("") }
@@ -527,8 +505,7 @@ fun ScanAndTranslateTab(
                                 ChemicalBreakdownCard(
                                     chemical = chemical,
                                     alerts = alerts,
-                                    userSettings = userSettings,
-                                    onRequestPremium = onRequestPremium
+                                    userSettings = userSettings
                                 )
                             }
                         }
@@ -761,8 +738,7 @@ fun ScanSummaryHeaderCard(
 fun ChemicalBreakdownCard(
     chemical: ChemicalEntity,
     alerts: List<String>,
-    userSettings: UserSettings,
-    onRequestPremium: () -> Unit
+    userSettings: UserSettings
 ) {
     val isDark = isSystemInDarkTheme()
     val uppercaseRisk = chemical.riskLevel.uppercase()
@@ -883,7 +859,7 @@ fun ChemicalBreakdownCard(
             )
 
             // Section: Risk Meter
-            Divider(color = if (isDark) Color(0xFF31352D) else Color(0xFFDDE5D9))
+            HorizontalDivider(color = if (isDark) Color(0xFF31352D) else Color(0xFFDDE5D9))
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
@@ -952,102 +928,60 @@ fun ChemicalBreakdownCard(
             )
 
             // Personal Allergy & Diet Flags
-            if (userSettings.isPremium) {
-                if (alerts.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                color = if (isDark) Color(0xFF3F1616) else Color(0xFFFEF2F2), 
-                                shape = RoundedCornerShape(12.dp)
+            if (alerts.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = if (isDark) Color(0xFF3F1616) else Color(0xFFFEF2F2), 
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .border(1.dp, if (isDark) Color(0xFF7F1D1D) else Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    alerts.forEach { alert ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(16.dp)
                             )
-                            .border(1.dp, if (isDark) Color(0xFF7F1D1D) else Color(0xFFFCA5A5), RoundedCornerShape(12.dp))
-                            .padding(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        alerts.forEach { alert ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = null,
-                                    tint = Color(0xFFEF4444),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "⚠️ Personalized Alert: Matches $alert setting",
-                                    color = if (isDark) Color(0xFFFECACA) else Color(0xFF991B1B),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "⚠️ Personalized Alert: Matches $alert setting",
+                                color = if (isDark) Color(0xFFFECACA) else Color(0xFF991B1B),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
                         }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                color = if (isDark) Color(0xFF064E3B) else Color(0xFFECFDF5), 
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Safe for your personalized dietary profile",
-                            color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF065F46),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
                     }
                 }
             } else {
-                // Freemium Teaser on allergy check
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.04f), 
+                            color = if (isDark) Color(0xFF064E3B) else Color(0xFFECFDF5), 
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .clickable { onRequestPremium() }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Check personal diet & allergy triggers",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Unlock Filters",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "Safe for your personalized dietary profile",
+                        color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF065F46),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -1059,8 +993,7 @@ fun ChemicalBreakdownCard(
 @Composable
 fun ChemicalDirectoryTab(
     viewModel: TranslatorViewModel,
-    userSettings: UserSettings,
-    onRequestPremium: () -> Unit
+    userSettings: UserSettings
 ) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val chemicals by viewModel.directoryList.collectAsStateWithLifecycle()
@@ -1181,7 +1114,7 @@ fun ChemicalDirectoryTab(
 
                             AnimatedVisibility(visible = isExpanded) {
                                 Column(modifier = Modifier.padding(top = 8.dp)) {
-                                    Divider(modifier = Modifier.padding(vertical = 6.dp))
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                                     Text(
                                         text = "Why Manufacturers Use It:",
                                         fontWeight = FontWeight.Bold,
@@ -1211,21 +1144,12 @@ fun ChemicalDirectoryTab(
 
                                     // Checks
                                     val viol = viewModel.checkDietaryViolations(chem, userSettings)
-                                    if (userSettings.isPremium) {
-                                        if (viol.isNotEmpty()) {
-                                            Text(
-                                                text = "Matches personal trigger: ${viol.joinToString()}",
-                                                color = Color(0xFFDC2626),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.sp
-                                            )
-                                        }
-                                    } else {
+                                    if (viol.isNotEmpty()) {
                                         Text(
-                                            text = "🔒 Diet Profile Flagging is locked. Unlock in settings.",
-                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
+                                            text = "Matches personal trigger: ${viol.joinToString()}",
+                                            color = Color(0xFFDC2626),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
                                         )
                                     }
                                 }
@@ -1410,8 +1334,7 @@ fun HistoryTab(viewModel: TranslatorViewModel) {
 @Composable
 fun ProfileTab(
     viewModel: TranslatorViewModel,
-    userSettings: UserSettings,
-    onRequestPremium: () -> Unit
+    userSettings: UserSettings
 ) {
     LazyColumn(
         modifier = Modifier
@@ -1436,88 +1359,12 @@ fun ProfileTab(
             }
         }
 
-        // Tiers monetization
-        item {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = if (userSettings.isPremium) Color(0xFFFFFBEB) else MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
-                ),
-                shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(
-                    width = 1.5.dp,
-                    color = if (userSettings.isPremium) Color(0xFFFBBF24) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = if (userSettings.isPremium) "👑" else "✨",
-                                fontSize = 24.sp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (userSettings.isPremium) "Premium Profile Active" else "Basic Standard Mode",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = if (userSettings.isPremium) Color(0xFF78350F) else MaterialTheme.colorScheme.primary
-                            )
-                        }
-
-                        if (!userSettings.isPremium) {
-                            Badge(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)) {
-                                Text("Freemium", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (userSettings.isPremium) {
-                            "You have unlocked unlimited personalized allergen & diet profiles! The app will automatically highlight any dietary warnings in scans."
-                        } else {
-                            "Ingredient scans and translations are 100% free. Subscribe to unlock automated custom flags that trigger on your specific allergies and dietary preferences!"
-                        },
-                        fontSize = 13.sp,
-                        color = if (userSettings.isPremium) Color(0xFF92400E) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-                        lineHeight = 18.sp
-                    )
-
-                    if (!userSettings.isPremium) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = onRequestPremium,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("premium_upgrade_button")
-                        ) {
-                            Text("Upgrade to Premium Filters — $2.99/mo", fontWeight = FontWeight.Bold)
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        TextButton(
-                            onClick = { viewModel.updateSettings(userSettings.copy(isPremium = false)) },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF78350F))
-                        ) {
-                            Text("Simulate Downgrade (Tester Action)", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-        }
+        // Tiers monetization removed
 
         // Diet Toggles Section
         item {
             Text(
-                "🥗 Personalized Diets (Premium Filters)",
+                "🥗 Personalized Diets",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onBackground
@@ -1531,61 +1378,51 @@ fun ProfileTab(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Strictly Vegan",
                         description = "Flag any chemicals containing whey, gelatin, carmine, or animal extracts.",
                         checked = userSettings.isVegan,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(isVegan = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_vegan"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Gluten Friendly",
                         description = "Flag compounds containing hidden wheat or dough conditioning gluten.",
                         checked = userSettings.isGlutenFree,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(isGlutenFree = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_gluten"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Synthetic Dye Warning",
                         description = "Trigger alerts for chemicals linked to hyperactivity (like Red 40, Yellow 5).",
                         checked = userSettings.flagDyes,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(flagDyes = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_dyes"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Avoid Titanium Dioxide",
                         description = "Flag whitener chemical E171 banned in EU food products.",
                         checked = userSettings.flagTitaniumDioxide,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(flagTitaniumDioxide = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_titanium"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Carrageenan Sensitive",
                         description = "Identify emulsifiers known to irritate digestive tracks.",
                         checked = userSettings.flagCarrageenan,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(flagCarrageenan = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_carrageenan"
                     )
                 }
@@ -1595,7 +1432,7 @@ fun ProfileTab(
         // Allergies Toggle Section
         item {
             Text(
-                "❌ Automated Allergens (Premium Filters)",
+                "❌ Automated Allergens",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onBackground
@@ -1609,49 +1446,41 @@ fun ProfileTab(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.05f))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Soy Allergies",
                         description = "Flag lecithin and soy-derivative binding agents.",
                         checked = userSettings.allergySoy,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(allergySoy = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_allergy_soy"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Dairy Allergies",
                         description = "Flag casein and whey lactose proteins.",
                         checked = userSettings.allergyDairy,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(allergyDairy = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_allergy_dairy"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Wheat Allergies",
                         description = "Flag structural products and yeasts matching wheat profiles.",
                         checked = userSettings.allergyWheat,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(allergyWheat = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_allergy_wheat"
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                    PremiumToggleItem(
+                    ToggleItem(
                         title = "Corn Allergies",
                         description = "Flag glucose and high-fructose corn syrups.",
                         checked = userSettings.allergyCorn,
-                        premiumLocked = !userSettings.isPremium,
                         onUpdate = { viewModel.updateSettings(userSettings.copy(allergyCorn = it)) },
-                        onLockClick = onRequestPremium,
                         testTag = "toggle_allergy_corn"
                     )
                 }
@@ -1663,13 +1492,11 @@ fun ProfileTab(
 }
 
 @Composable
-fun PremiumToggleItem(
+fun ToggleItem(
     title: String,
     description: String,
     checked: Boolean,
-    premiumLocked: Boolean,
     onUpdate: (Boolean) -> Unit,
-    onLockClick: () -> Unit,
     testTag: String
 ) {
     Row(
@@ -1685,23 +1512,8 @@ fun PremiumToggleItem(
                     text = title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = if (premiumLocked) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                if (premiumLocked) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "PRO",
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
             Text(
                 text = description,
@@ -1714,28 +1526,15 @@ fun PremiumToggleItem(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        if (premiumLocked) {
-            IconButton(
-                onClick = onLockClick,
-                modifier = Modifier.minimumInteractiveComponentSize()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "Premium lock",
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                )
-            }
-        } else {
-            Switch(
-                checked = checked,
-                onCheckedChange = onUpdate,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                ),
-                modifier = Modifier.scale(0.85f)
-            )
-        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onUpdate,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = MaterialTheme.colorScheme.primary
+            ),
+            modifier = Modifier.scale(0.85f)
+        )
     }
 }
 
@@ -1760,103 +1559,6 @@ fun BadgeLabel(text: String, color: Color) {
     }
 }
 
-@Composable
-fun PremiumSubscriptionDialog(
-    onDismiss: () -> Unit,
-    onSubscribeSuccess: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .testTag("subscription_dialog")
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("👑", fontSize = 48.sp)
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "Unlock Personal Filters",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "Get ChemTranslator Premium Protection for ${'$'}2.99/mo",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 4.dp),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    SubscriptionFeatureItem("❌ Custom Allergen Flags (Soy, Dairy, Wheat...)")
-                    SubscriptionFeatureItem("🥗 Dietary Toggles (Strict Vegan, Gluten-Free)")
-                    SubscriptionFeatureItem("🔬 High-risk additive warnings & EU limits")
-                    SubscriptionFeatureItem("☁️ Continuous local database syncing")
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = onSubscribeSuccess,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("dialog_purchase_btn"),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Subscribe Now — $2.99 / Month", fontWeight = FontWeight.Bold)
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TextButton(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                ) {
-                    Text("Maybe Later", fontWeight = FontWeight.Medium, fontSize = 13.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SubscriptionFeatureItem(text: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Check,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-        )
-    }
-}
 
 data class PresetProduct(
     val name: String,

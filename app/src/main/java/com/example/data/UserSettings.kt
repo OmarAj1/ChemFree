@@ -1,7 +1,6 @@
 package com.example.data
 
 data class UserSettings(
-    val isPremium: Boolean = false,
     val isVegan: Boolean = false,
     val isGlutenFree: Boolean = false,
     val flagDyes: Boolean = false,

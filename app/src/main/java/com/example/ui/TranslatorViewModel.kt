@@ -86,7 +86,6 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
 
     private fun loadSettings() {
         _userSettings.value = UserSettings(
-            isPremium = sharedPref.getBoolean("is_premium", false),
             isVegan = sharedPref.getBoolean("is_vegan", false),
             isGlutenFree = sharedPref.getBoolean("is_gluten_free", false),
             flagDyes = sharedPref.getBoolean("flag_dyes", false),
@@ -104,7 +103,6 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
     fun updateSettings(settings: UserSettings) {
         _userSettings.value = settings
         sharedPref.edit().apply {
-            putBoolean("is_premium", settings.isPremium)
             putBoolean("is_vegan", settings.isVegan)
             putBoolean("is_gluten_free", settings.isGlutenFree)
             putBoolean("flag_dyes", settings.flagDyes)
@@ -155,8 +153,6 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
 
     // Helper function to return details of what dietary restrictions or allergy triggers a chemical sets off
     fun checkDietaryViolations(chemical: ChemicalEntity, settings: UserSettings): List<String> {
-        if (!settings.isPremium) return emptyList()
-
         val violations = mutableListOf<String>()
         val tags = chemical.dietarySafety.lowercase()
 
