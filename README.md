@@ -1,4 +1,4 @@
-# Chemical Translator
+# Purely
 
 Scan or search food and cosmetic chemical ingredients to translate them into plain English, understand their manufacturer use-cases, and identify health risk levels.
 

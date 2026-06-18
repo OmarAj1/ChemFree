@@ -68,9 +68,10 @@ def merge_sqlite_databases(output_db="MergedFoodDB.db"):
             except Exception as e:
                  print(f"     [!] Unexpected error: {e}")
 
+        # Commit any pending transactions before detaching
+        main_conn.commit()
         # Detach the source database
         main_cursor.execute(f"DETACH DATABASE {db_alias};")
-        main_conn.commit()
 
     print(f"\nSuccessfully merged {len(db_files)} databases into '{output_db}'.")
     print("Optimization: Vacuuming the new database to compress its size...")

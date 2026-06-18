@@ -42,6 +42,7 @@ data class ScanHistoryEntity(
 )
 
 @Dao
+@JvmSuppressWildcards
 interface ChemicalDao {
     @Query("SELECT * FROM chemicals ORDER BY displayName ASC")
     fun getAllChemicals(): Flow<List<ChemicalEntity>>
@@ -53,28 +54,29 @@ interface ChemicalDao {
     fun searchChemicals(query: String): Flow<List<ChemicalEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertChemical(chemical: ChemicalEntity)
+    suspend fun insertChemical(chemical: ChemicalEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertChemicals(chemicals: List<ChemicalEntity>)
+    suspend fun insertChemicals(chemicals: List<ChemicalEntity>): List<Long>
 
     @Query("SELECT COUNT(*) FROM chemicals")
     suspend fun getCount(): Int
 }
 
 @Dao
+@JvmSuppressWildcards
 interface ScanHistoryDao {
     @Query("SELECT * FROM scan_history ORDER BY timestamp DESC")
     fun getAllHistory(): Flow<List<ScanHistoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertHistory(history: ScanHistoryEntity)
+    suspend fun insertHistory(history: ScanHistoryEntity): Long
 
     @Query("DELETE FROM scan_history WHERE id = :id")
-    suspend fun deleteHistoryById(id: Int)
+    suspend fun deleteHistoryById(id: Int): Int
 
     @Query("DELETE FROM scan_history")
-    suspend fun clearHistory()
+    suspend fun clearHistory(): Int
 }
 
 @Database(entities = [ChemicalEntity::class, ScanHistoryEntity::class], version = 2, exportSchema = false)
@@ -91,9 +93,9 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "chemical_translator_db"
+                    "purely_db"
                 )
-                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

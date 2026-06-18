@@ -12,13 +12,7 @@ object DatabaseManager {
     private const val TAG = "DatabaseManager"
     private const val ASSETS_DB_DIR = "databases"
 
-    val ALL_DATABASES = listOf(
-        "AccessionNumber.db", "CompoundExternalDescriptor.db", "CompoundsFlavor.db",
-        "CompoundsHealthEffect.db", "CompoundsPathway.db", "Enzyme.db", "Flavor.db",
-        "Food.db", "FoodTaxonomy.db", "HealthEffect.db", "NcbiTaxonomyMap.db",
-        "Nutrient.db", "OntologySynonym.db", "OntologyTerm.db", "Pathway.db",
-        "food_additives.db", "Food_flavourings.db", "feed_additives_animal.db"
-    )
+    val ALL_DATABASES = listOf("MergedFoodDB.db")
 
     fun openDatabase(context: Context, dbName: String): SQLiteDatabase? {
         val dbFile = context.getDatabasePath(dbName)
@@ -96,10 +90,9 @@ object DatabaseManager {
         if (query.isBlank() || query.length < 2) return results
         val q = "%$query%"
 
-        // Search Food Additives
-        openDatabase(context, "food_additives.db")?.use { db ->
+        openDatabase(context, "MergedFoodDB.db")?.use { db ->
             try {
-                db.rawQuery("SELECT name, e_num, note FROM food_additives WHERE name LIKE ? OR e_num LIKE ? LIMIT 20", arrayOf(q, q)).use { cursor ->
+                db.rawQuery("SELECT name, e_no, item_page_title FROM food_additives WHERE name LIKE ? OR e_no LIKE ? LIMIT 20", arrayOf(q, q)).use { cursor ->
                     while (cursor.moveToNext()) {
                         val name = cursor.getString(0) ?: ""
                         val eNum = cursor.getString(1) ?: ""
@@ -117,11 +110,8 @@ object DatabaseManager {
                         )
                     }
                 }
-            } catch (e: Exception) { Log.e(TAG, "Search error in food_additives.db", e) }
-        }
+            } catch (e: Exception) { Log.e(TAG, "Search error in food_additives table", e) }
 
-        // Search Food Flavourings
-        openDatabase(context, "Food_flavourings.db")?.use { db ->
             try {
                 db.rawQuery("SELECT chemical_name, fl_no FROM Food_flavourings WHERE chemical_name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
                     while (cursor.moveToNext()) {
@@ -140,11 +130,8 @@ object DatabaseManager {
                         )
                     }
                 }
-            } catch (e: Exception) { Log.e(TAG, "Search error in Food_flavourings.db", e) }
-        }
+            } catch (e: Exception) { Log.e(TAG, "Search error in Food_flavourings table", e) }
 
-        // Search Feed Additives Animal
-        openDatabase(context, "feed_additives_animal.db")?.use { db ->
             try {
                 db.rawQuery("SELECT additive_name, code, catgrp FROM feed_additives_animal WHERE additive_name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
                     while (cursor.moveToNext()) {
@@ -164,15 +151,10 @@ object DatabaseManager {
                         )
                     }
                 }
-            } catch (e: Exception) { Log.e(TAG, "Search error in feed_additives_animal.db", e) }
-        }
+            } catch (e: Exception) { Log.e(TAG, "Search error in feed_additives_animal table", e) }
 
-        // Search FooDB: Food
-        openDatabase(context, "Food.db")?.use { db ->
             try {
-                // FooDB tables might have different schemas. Assuming 'foods' or 'food' table with 'name' or 'public_id'
-                // Based on "Food" table name being "foods" or "food", let's try "foods" first.
-                db.rawQuery("SELECT name FROM food WHERE name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
+                db.rawQuery("SELECT name FROM Food WHERE name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
                     while (cursor.moveToNext()) {
                         val name = cursor.getString(0) ?: ""
                         results.add(
@@ -188,32 +170,10 @@ object DatabaseManager {
                         )
                     }
                 }
-            } catch (e: Exception) { 
-                try {
-                     db.rawQuery("SELECT name FROM foods WHERE name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
-                        while (cursor.moveToNext()) {
-                            val name = cursor.getString(0) ?: ""
-                            results.add(
-                                com.example.data.ChemicalEntity(
-                                    name = name.lowercase(),
-                                    displayName = name,
-                                    plainEnglishName = "Food Item",
-                                    purpose = "Natural food component",
-                                    riskLevel = "LOW",
-                                    riskDescription = "Found in FooDB Database",
-                                    dietarySafety = "vegan,gluten_free"
-                                )
-                            )
-                        }
-                    }
-                } catch(e2: Exception) { Log.e(TAG, "Search error in Food.db", e2) }
-            }
-        }
-        
-        // Search FooDB: Flavor
-        openDatabase(context, "Flavor.db")?.use { db ->
+            } catch (e: Exception) { Log.e(TAG, "Search error in Food table", e) }
+
             try {
-                db.rawQuery("SELECT name FROM flavor WHERE name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
+                db.rawQuery("SELECT name FROM Flavor WHERE name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
                     while (cursor.moveToNext()) {
                         val name = cursor.getString(0) ?: ""
                         results.add(
@@ -229,26 +189,7 @@ object DatabaseManager {
                         )
                     }
                 }
-            } catch (e: Exception) { 
-                 try {
-                     db.rawQuery("SELECT name FROM flavors WHERE name LIKE ? LIMIT 20", arrayOf(q)).use { cursor ->
-                        while (cursor.moveToNext()) {
-                            val name = cursor.getString(0) ?: ""
-                            results.add(
-                                com.example.data.ChemicalEntity(
-                                    name = name.lowercase(),
-                                    displayName = name,
-                                    plainEnglishName = "Flavoring",
-                                    purpose = "Natural or artificial flavor",
-                                    riskLevel = "UNKNOWN",
-                                    riskDescription = "Found in FooDB Flavor Database",
-                                    dietarySafety = "vegan,gluten_free"
-                                )
-                            )
-                        }
-                    }
-                } catch(e2: Exception) { Log.e(TAG, "Search error in Flavor.db", e2) }
-            }
+            } catch (e: Exception) { Log.e(TAG, "Search error in Flavor table", e) }
         }
 
         return results

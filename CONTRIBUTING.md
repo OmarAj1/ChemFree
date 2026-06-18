@@ -1,6 +1,6 @@
-# Contributing to Chemical Translator
+# Contributing to Purely
 
-First off, thank you for considering contributing to Chemical Translator! People like you make this project better for everyone.
+First off, thank you for considering contributing to Purely! People like you make this project better for everyone.
 
 ## Where do I go from here?
 

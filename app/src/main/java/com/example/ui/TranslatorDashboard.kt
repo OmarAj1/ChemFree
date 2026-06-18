@@ -73,7 +73,7 @@ fun TranslatorDashboardScreen(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "ChemTranslator",
+                            text = "Purely",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             fontFamily = FontFamily.SansSerif
@@ -216,7 +216,7 @@ fun ScanAndTranslateTab(
         item {
             Column(modifier = Modifier.padding(top = 12.dp)) {
                 Text(
-                    text = "Chemical Translator",
+                    text = "Purely",
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.onBackground,

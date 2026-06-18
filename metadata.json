@@ -1,6 +1,6 @@
 {
-  "name": "Chemical Translator",
-  "description": "Scan or search food and cosmetic chemical ingredients to translate them into plain English, understand their manufacturer use-cases, and identify health risk levels.",
+  "name": "BioNexa",
+  "description": "An advanced food chemistry and AgriTech platform. Explore thousands of ingredients, taxonomy, pathways, and health effects powered by a comprehensive local database.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

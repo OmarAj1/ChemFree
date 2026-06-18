@@ -2,11 +2,11 @@
 
 **Effective Date:** 2024-01-01
 
-This Privacy Policy explains how the Chemical Translator application ("we", "us", or "our") collects, uses, and protects your information.
+This Privacy Policy explains how the Purely application ("we", "us", or "our") collects, uses, and protects your information.
 
 ## 1. Information We Collect
 
-**We do not collect, store, or share your personal data on external servers.** The Chemical Translator is designed as an "offline-first" application, meaning the vast majority of its operations happen locally on your device.
+**We do not collect, store, or share your personal data on external servers.** Purely is designed as an "offline-first" application, meaning the vast majority of its operations happen locally on your device.
 
 ### Camera Access and Photos
 To use the ingredient scanner (OCR), the application requires access to your device's Camera. 

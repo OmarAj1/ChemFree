@@ -32,7 +32,7 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
     val currentTab: StateFlow<String> = _currentTab.asStateFlow()
 
     // Active User Config
-    private val sharedPref = application.getSharedPreferences("chem_translator_prefs", Context.MODE_PRIVATE)
+    private val sharedPref = application.getSharedPreferences("purely_prefs", Context.MODE_PRIVATE)
     private val _userSettings = MutableStateFlow(UserSettings())
     val userSettings: StateFlow<UserSettings> = _userSettings.asStateFlow()
 
