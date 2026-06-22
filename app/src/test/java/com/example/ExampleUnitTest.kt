@@ -1,16 +1,40 @@
 package com.example
 
-import org.junit.Assert.*
 import org.junit.Test
+import java.io.File
+import java.sql.DriverManager
 
-/**
- * Example local unit test, which will execute on the development machine (host).
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
 class ExampleUnitTest {
   @Test
-  fun addition_isCorrect() {
-    assertEquals(4, 2 + 2)
+  fun testInspectDatabase() {
+    val dbFile = File("src/main/assets/databases/MasterUnifiedDB.db")
+    if (!dbFile.exists()) {
+      println("DB file does not exist at: ${dbFile.absolutePath}")
+      return
+    }
+    val url = "jdbc:sqlite:${dbFile.absolutePath}"
+    try {
+      Class.forName("org.sqlite.JDBC")
+      DriverManager.getConnection(url).use { conn ->
+        conn.metaData.getTables(null, null, "%", null).use { rs ->
+          while (rs.next()) {
+             val tableName = rs.getString("TABLE_NAME")
+             println("Table: $tableName")
+             // List columns
+             conn.createStatement().use { stmt ->
+               stmt.executeQuery("PRAGMA table_info('$tableName')").use { colRs ->
+                 while (colRs.next()) {
+                   val colName = colRs.getString("name")
+                   val colType = colRs.getString("type")
+                   println("  - $colName ($colType)")
+                 }
+               }
+             }
+          }
+        }
+      }
+    } catch (e: Exception) {
+      e.printStackTrace()
+    }
   }
 }

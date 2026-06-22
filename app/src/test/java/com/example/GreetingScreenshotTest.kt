@@ -26,7 +26,7 @@ class GreetingScreenshotTest {
     composeTestRule.setContent {
       MyApplicationTheme {
         androidx.compose.material3.Text(
-          text = "Purely: Safe Consumer Protection",
+          text = "BioNexa: Safe Consumer Protection",
           modifier = androidx.compose.ui.Modifier.padding(16.dp),
           style = androidx.compose.material3.MaterialTheme.typography.headlineMedium,
           color = androidx.compose.material3.MaterialTheme.colorScheme.primary

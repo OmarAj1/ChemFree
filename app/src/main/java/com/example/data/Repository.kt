@@ -283,6 +283,21 @@ class ChemicalRepository(
         return bestMatch
     }
 
+    private fun cleanIngredient(ingredient: String): String {
+        var s = ingredient.trim().lowercase()
+        val fillers = setOf(
+            "organic", "natural", "pure", "purified", "enriched", "bleached", 
+            "concentrated", "powdered", "dried", "dehydrated", "fine", "raw", 
+            "sweetened", "unsweetened", "soluble", "emulsified", "synthetic",
+            "modified", "refined", "hydrolyzed", "partially", "hydrogenated",
+            "artificial", "imitation", "whole", "extract", "extracts", "with",
+            "added", "preservative", "preservatives", "and", "or", "of", "contains",
+            "contain", "less", "than", "percent", "prepared"
+        )
+        val words = s.split(Regex("[\\s-]+")).map { it.replace(Regex("[^a-zA-Z0-9]"), "") }.filter { it.isNotEmpty() && it !in fillers }
+        return words.joinToString(" ")
+    }
+
     /**
      * Translates and breaks down a raw list of ingredients locally.
      * Splits words locally and performs dynamic keyword searches in our database.
@@ -291,73 +306,90 @@ class ChemicalRepository(
         productName: String,
         ingredientsText: String
     ): Pair<List<ChemicalEntity>, String> = withContext(Dispatchers.IO) {
-        val normalizedInput = ingredientsText.lowercase()
+        val preNormalizedText = ingredientsText.lowercase()
+            .replace(Regex("ingredients?:?"), " ")
+            .replace(Regex("contains?:?"), " ")
+            .replace(Regex("may contain?:?"), " ")
+            .replace("\n", ", ")
+            .replace(";", ", ")
+            .replace(".", ", ")
+            .replace("[", ", ")
+            .replace("]", ", ")
+            .replace("(", ", ")
+            .replace(")", ", ")
+            .replace("{", ", ")
+            .replace("}", ", ")
+
+        val normalizedInput = preNormalizedText.lowercase()
 
         // Local Keyword Matcher (Offline Mode)
         Log.d(TAG, "Using local keyword matcher")
         val scanResults = mutableListOf<ChemicalEntity>()
         val allLocal = chemicalDao.getAllChemicals().firstOrNull() ?: emptyList()
 
-        val rawIngredientsList = ingredientsText.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        val rawIngredientsList = preNormalizedText.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         
         // Fuzzy Matching Correction
         val ingredientsList = rawIngredientsList.map { rawWord ->
              findClosestIngredient(rawWord)
         }
 
-        // If the user just scanned a block of text, the fallback is substring matching
-        if (ingredientsList.size <= 1) {
+        // Substring and fuzzy matching loops
+        for (i in ingredientsList.indices) {
+            val rawIngredient = rawIngredientsList[i]
+            val fuzzyIngredient = ingredientsList[i]
+            
+            val cleanRaw = cleanIngredient(rawIngredient)
+            val cleanFuzzy = cleanIngredient(fuzzyIngredient)
+
+            var matched = false
+
+            // 1. Check Room Database (Pre-seeded major additives)
             for (chemical in allLocal) {
-                if (normalizedInput.contains(chemical.name)) {
+                val chemName = chemical.name.lowercase()
+                if (rawIngredient.contains(chemName) || 
+                    fuzzyIngredient.contains(chemName) || 
+                    cleanRaw.contains(chemName) || 
+                    cleanFuzzy.contains(chemName) || 
+                    chemName.contains(cleanRaw) || 
+                    chemName.contains(cleanFuzzy)
+                ) {
                     if (!scanResults.any { it.name == chemical.name }) {
                         scanResults.add(chemical)
                     }
+                    matched = true
                 }
             }
-        } else {
-            // Comma separated list of ingredients
-            for (ingredient in ingredientsList) {
-                val normalizedIngredient = ingredient.lowercase()
-                var matched = false
-                // Check Room Database (Pre-seeded chemicals)
+
+            // 2. Check FooDB SQLite Database (foodDbHelper)
+            if (!matched) {
+                val queryCandidates = listOf(fuzzyIngredient, rawIngredient, cleanFuzzy, cleanRaw).filter { it.isNotBlank() }.distinct()
+                for (candidate in queryCandidates) {
+                    val chem = foodDbHelper.getIngredientDetails(candidate)
+                    if (chem != null) {
+                        if (!scanResults.any { it.name == chem.name }) {
+                            scanResults.add(chem)
+                        }
+                        matched = true
+                        break
+                    }
+                }
+            }
+            
+            // Extra SQLite Databases search removed, using MasterUnifiedDB only
+        }
+
+        // Fallback: If list size <= 1, try space-based word matching to catch non-comma lists!
+        if (ingredientsList.size <= 1) {
+            val spaceSplits = preNormalizedText.split(Regex("\\s+")).map { it.trim() }.filter { it.length > 2 }
+            for (word in spaceSplits) {
+                val cleanWord = cleanIngredient(word)
                 for (chemical in allLocal) {
-                    if (normalizedIngredient.contains(chemical.name)) {
+                    val chemName = chemical.name.lowercase()
+                    if (word == chemName || cleanWord == chemName) {
                         if (!scanResults.any { it.name == chemical.name }) {
                             scanResults.add(chemical)
                         }
-                        matched = true
-                    }
-                }
-
-                // Check FooDB SQLite Database
-                if (!matched) {
-                    val dbNutrients = foodDbHelper.getNutrientsForFood(normalizedIngredient)
-                    if (dbNutrients != null) {
-                        val chem = ChemicalEntity(
-                            name = normalizedIngredient,
-                            displayName = ingredient.replaceFirstChar { it.uppercase() },
-                            plainEnglishName = "Food Component",
-                            purpose = "Analyzed nutrient profile or food component.",
-                            riskLevel = "LOW",
-                            riskDescription = "Validated in local nutrition database.",
-                            dietarySafety = dbNutrients // Passes along Vegan/Allergy tags
-                        )
-                        if (!scanResults.any { it.name == chem.name }) {
-                            scanResults.add(chem)
-                        }
-                        matched = true
-                    }
-                }
-                
-                // Check Extra SQLite Databases
-                if (!matched) {
-                    val extraResults = com.example.DatabaseManager.searchAllDatabases(context, normalizedIngredient)
-                    if (extraResults.isNotEmpty()) {
-                        val chem = extraResults.first()
-                        if (!scanResults.any { it.name == chem.name }) {
-                            scanResults.add(chem)
-                        }
-                        matched = true
                     }
                 }
             }

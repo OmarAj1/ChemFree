@@ -10,7 +10,7 @@ import android.util.Log
 class FoodDatabaseHelper(private val context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
 
     companion object {
-        const val DB_NAME = "food_database1.db"
+        const val DB_NAME = "MasterUnifiedDB.db"
         const val DB_VERSION = 1
         private const val TAG = "FoodDatabaseHelper"
     }
@@ -45,37 +45,46 @@ class FoodDatabaseHelper(private val context: Context) : SQLiteOpenHelper(contex
         // Handled by copy if needed later
     }
 
-    fun getNutrientsForFood(foodName: String): String? {
+    fun getIngredientDetails(foodName: String): ChemicalEntity? {
         val db = getReadableDatabase()
-        var result: String? = null
+        val queryWord = foodName.trim().lowercase()
         try {
-            db.rawQuery("SELECT nutrients FROM foods WHERE name LIKE ? LIMIT 1", arrayOf("%$foodName%")).use { cursor ->
+            db.rawQuery(
+                "SELECT name, description, category, dietary_safety, purpose, health_risks, risk_level, dietary_info, plain_english_name FROM UnifiedIngredients WHERE name LIKE ? OR ? LIKE '%' || name || '%' ORDER BY length(name) DESC LIMIT 1",
+                arrayOf("%$queryWord%", queryWord)
+            ).use { cursor ->
                 if (cursor.moveToFirst()) {
-                    result = cursor.getString(0)
+                    return ChemicalEntity(
+                        name = cursor.getString(0) ?: foodName,
+                        displayName = (cursor.getString(8) ?: cursor.getString(0) ?: foodName).replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+                        plainEnglishName = cursor.getString(8) ?: "Food Component",
+                        purpose = cursor.getString(4) ?: cursor.getString(1) ?: "Analyzed nutrient profile or food component.",
+                        riskLevel = cursor.getString(6) ?: "LOW",
+                        riskDescription = cursor.getString(5) ?: "Validated in local nutrition database.",
+                        dietarySafety = cursor.getString(3) ?: cursor.getString(7) ?: ""
+                    )
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error querying database for $foodName: ${e.message}")
         }
-        return result
+        return null
     }
 
     fun searchFoods(query: String): List<ChemicalEntity> {
         val db = getReadableDatabase()
         val results = mutableListOf<ChemicalEntity>()
         try {
-            db.rawQuery("SELECT name, nutrients FROM foods WHERE name LIKE ? LIMIT 50", arrayOf("%$query%")).use { cursor ->
+            db.rawQuery("SELECT name, description, category, dietary_safety, purpose, health_risks, risk_level, dietary_info, plain_english_name FROM UnifiedIngredients WHERE name LIKE ? LIMIT 50", arrayOf("%$query%")).use { cursor ->
                 while (cursor.moveToNext()) {
-                    val name = cursor.getString(0)
-                    val nutrients = cursor.getString(1)
                     val chem = ChemicalEntity(
-                        name = name,
-                        displayName = name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
-                        plainEnglishName = "Food Component",
-                        purpose = "Analyzed nutrient profile or food component.",
-                        riskLevel = "LOW",
-                        riskDescription = "Validated in local nutrition database.",
-                        dietarySafety = nutrients
+                        name = cursor.getString(0) ?: query,
+                        displayName = (cursor.getString(8) ?: cursor.getString(0) ?: query).replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+                        plainEnglishName = cursor.getString(8) ?: "Food Component",
+                        purpose = cursor.getString(4) ?: cursor.getString(1) ?: "Analyzed nutrient profile or food component.",
+                        riskLevel = cursor.getString(6) ?: "LOW",
+                        riskDescription = cursor.getString(5) ?: "Validated in local nutrition database.",
+                        dietarySafety = cursor.getString(3) ?: cursor.getString(7) ?: ""
                     )
                     results.add(chem)
                 }

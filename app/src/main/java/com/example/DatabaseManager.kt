@@ -12,7 +12,7 @@ object DatabaseManager {
     private const val TAG = "DatabaseManager"
     private const val ASSETS_DB_DIR = "databases"
 
-    val ALL_DATABASES = listOf("MergedFoodDB.db")
+    val ALL_DATABASES = listOf("MasterUnifiedDB.db")
 
     fun openDatabase(context: Context, dbName: String): SQLiteDatabase? {
         val dbFile = context.getDatabasePath(dbName)

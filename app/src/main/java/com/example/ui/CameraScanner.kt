@@ -163,7 +163,7 @@ fun CameraCaptureWithAnalysis(
             val canvasHeight = size.height
 
             val rectWidth = canvasWidth * 0.85f
-            val rectHeight = canvasHeight * 0.6f
+            val rectHeight = canvasHeight * 0.25f
 
             val rectLeft = (canvasWidth - rectWidth) / 2f
             val rectTop = (canvasHeight - rectHeight) / 2f
@@ -327,9 +327,9 @@ fun CameraCaptureWithAnalysis(
 
                                                 // The visual box defined by proportions in Canvas
                                                 val viewCropLeft = screenWidth * 0.075f
-                                                val viewCropTop = screenHeight * 0.2f
+                                                val viewCropTop = screenHeight * 0.375f
                                                 val viewCropWidth = screenWidth * 0.85f
-                                                val viewCropHeight = screenHeight * 0.6f
+                                                val viewCropHeight = screenHeight * 0.25f
 
                                                 // Map to original image coordinates
                                                 val calculatedX = ((viewCropLeft - offsetX) / scale).toInt()
@@ -351,9 +351,9 @@ fun CameraCaptureWithAnalysis(
                                             } else {
                                                 // Fallback if screen size is somehow not recorded
                                                 val fallbackX = (imageWidth * 0.075f).toInt()
-                                                val fallbackY = (imageHeight * 0.2f).toInt()
+                                                val fallbackY = (imageHeight * 0.375f).toInt()
                                                 val fallbackWidth = (imageWidth * 0.85f).toInt()
-                                                val fallbackHeight = (imageHeight * 0.6f).toInt()
+                                                val fallbackHeight = (imageHeight * 0.25f).toInt()
                                                 Bitmap.createBitmap(rotatedBitmap, fallbackX, fallbackY, fallbackWidth, fallbackHeight)
                                             }
                                             
