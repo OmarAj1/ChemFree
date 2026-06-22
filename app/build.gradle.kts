@@ -9,6 +9,10 @@ plugins {
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
+  
+  androidResources {
+    noCompress += "db"
+  }
 
   defaultConfig {
     applicationId = "com.aistudio.chemtranslate.vfyquz"

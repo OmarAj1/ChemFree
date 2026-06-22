@@ -178,35 +178,6 @@ fun ScanAndTranslateTab(
         return
     }
 
-    // Sample Simulation Presets representing common additives
-    val presets = listOf(
-        PresetProduct(
-            name = "Classic Strawberry Candy",
-            icon = "🍬",
-            ingredients = "Sugar, Corn Syrup, Citric Acid, Red 40, Artificial Strawberry Flavor, Yellow 5, Titanium Dioxide"
-        ),
-        PresetProduct(
-            name = "Zero-Sugar Blue Energy Drink",
-            icon = "⚡",
-            ingredients = "Carbonated Water, Citric Acid, Aspartame, Sodium Benzoate, Caffeine, Soy Lecithin"
-        ),
-        PresetProduct(
-            name = "Organic Chocolate Milk",
-            icon = "🥛",
-            ingredients = "Organic Whole Milk, Cane Sugar, Organic Cocoa, Carrageenan, Whey Protein"
-        ),
-        PresetProduct(
-            name = "Teatime Bread Roll",
-            icon = "🍞",
-            ingredients = "Enriched Wheat Flour, Water, Yeast, High Fructose Corn Syrup, Potassium Bromate"
-        ),
-        PresetProduct(
-            name = "PFAS Microwave Popcorn",
-            icon = "🍿",
-            ingredients = "Whole Grain Popcorn, Palm Oil, Salt, Natural Butter Flavor, PFOA Barrier Lining Packaging"
-        )
-    )
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -281,82 +252,6 @@ fun ScanAndTranslateTab(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 4.dp)
                         )
-                    }
-                }
-            }
-        }
-
-        // Preset simulators
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = "📱 Simulated Scans (Try one!)",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        presets.forEach { preset ->
-                            Card(
-                                onClick = {
-                                    keyboardController?.hide()
-                                    focusManager.clearFocus()
-                                    productName = preset.name
-                                    rawIngredientsText = preset.ingredients
-                                    viewModel.processIngredientsScan(preset.name, preset.ingredients)
-                                },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.background
-                                ),
-                                shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier
-                                    .width(180.dp)
-                                    .testTag("preset_${preset.name.replace(" ", "_")}")
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .background(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                                CircleShape
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(preset.icon, fontSize = 20.sp)
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column {
-                                        Text(
-                                            text = preset.name,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = "Tap to scan",
-                                            fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -1578,8 +1473,3 @@ fun BadgeLabel(text: String, color: Color) {
 }
 
 
-data class PresetProduct(
-    val name: String,
-    val icon: String,
-    val ingredients: String
-)

@@ -70,8 +70,6 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
 
     init {
         viewModelScope.launch {
-            // Check preseed on first startup
-            repository.checkAndPreseedDatabase()
             // Load user profile preferences
             loadSettings()
         }

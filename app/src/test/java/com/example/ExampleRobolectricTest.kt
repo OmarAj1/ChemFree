@@ -22,20 +22,12 @@ class ExampleRobolectricTest {
   @Test
   fun `print merged database tables`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
-    val db = DatabaseManager.openDatabase(context, "MergedFoodDB.db")
-    if (db != null) {
-      println("--- COLUMNS IN foods TABLE ---")
-      db.rawQuery("PRAGMA table_info('foods')", null).use { cursor ->
-        while (cursor.moveToNext()) {
-          val name = cursor.getString(1)
-          val type = cursor.getString(2)
-          println("  - $name ($type)")
-        }
-      }
-      println("--- END COLUMNS ---")
-      db.close()
-    } else {
-      println("Could not open MergedFoodDB.db")
+    val assetManager = context.assets
+    assetManager.open("databases/MasterUnifiedDB.db").use { input ->
+      val bytes = input.readBytes()
+      println("Read bytes from asset: ${bytes.size}")
+      val header = bytes.take(16).toByteArray().toString(Charsets.UTF_8)
+      println("Header: $header")
     }
   }
 }
